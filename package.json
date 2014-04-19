@@ -1,0 +1,16 @@
+{
+  "name": "meatfree",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.6.1",
+    "gulp-uglify": "^0.2.1",
+    "gulp-header": "^1.0.2"
+  }
+}

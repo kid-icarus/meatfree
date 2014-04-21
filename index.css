@@ -13,3 +13,7 @@ body {
 #container {
   margin: 100px;
 }
+
+ol {
+  margin: 30px;
+}

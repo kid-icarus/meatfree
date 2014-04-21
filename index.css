@@ -1,5 +1,6 @@
 a {
   padding: 30px;
+  margin: 30px;
   color: white;
   background-color: #31dfff;
 }
@@ -7,4 +8,8 @@ a {
 body {
   background-color: #000;
   color: white;
+}
+
+#container {
+  margin: 100px;
 }

@@ -2,7 +2,7 @@
 This bookmarklet allows you to insert your own images on facespac.es
 
 ##Usage
- - [Add the bookmarklet](https://github.io/kid-icarus/meatfree).
+ - [Add the bookmarklet](https://kid-icarus/github.io/meatfree).
  - It will add new menu items to the facespac menu.
  - Click on 'Choose Photo'
  - Fill in your fingerprint and userid: (hint: look at HTTP POST)

@@ -1,279 +1,144 @@
 (function($, Fingerprint, md5) {
-
-  $.get("/ip?t=" + new Date().getTime(), function(data) {
-  
-  var fingerprint = new Fingerprint({canvas: true}).get(),
-      ip = data.ip,
-      userId = md5(fingerprint + ip);
-  
-  var MeatFree = function() {
-    this.fadeMenu(2)
-    if (document.getElementById('meatfree-container') instanceof HTMLElement) {
-      return
-    }
-    var channel = document.getElementById('channel')
-    this.reader = new FileReader()
-    this.postBody = {channel: channel.dataset.channel}
-    this.buildCredsModal()
-    this.buildModal()
-    this.addMenuItems()
-    this.addStyles()
-    this.addEvents()
-    this.render()
+  if (document.getElementById('meatfree-container') instanceof HTMLElement) {
+    $('#meatfre-container').show()
+    return;
   }
 
-  MeatFree.prototype.fadeMenu = function(num) {
-    var self = this
-    if (num === 0) {
-      return
-    }
+  $.get('/ip?t=' + new Date().getTime(), function(data) {
+    var ip = data.ip;
 
-    $('#menu-button').fadeOut(300, function() {
-      $(this).fadeIn(300)
-      self.fadeMenu(num - 1)
-    })
-  }
+    var fingerprint = new Fingerprint({canvas: true}).get();
+    var userId = md5(fingerprint + ip);
+    var channel = document.getElementById('channel');
+    var message = document.getElementById('composer-message');
+    var reader = new FileReader();
+    var postBody = {channel: channel.dataset.channel, fingerprint: fingerprint, userid: userId};
 
+    var container = document.createElement('div');
+    container.id = 'meatfree-container';
+    container.innerHTML = '<div id="meatfree-modal">' +
+      '<div id="meatfree-drop"><p id="meatfree-help">Drop file here</p></div>' +
+      '<input type="file" id="meatfree-picture">' +
+      '<a id="meatfree-close">Close</a>' +
+      '<a id="meatfree-submit">Submit</a>' +
+      '</div>'
+    document.body.appendChild(container);
 
-  MeatFree.prototype.buildCredsModal = function() {
-    this.credsModal = document.createElement('div')
-    this.meatMenu =  document.createElement('a')
-    this.useridLabel =  document.createElement('label')
-    this.userid =  document.createElement('input')
-    this.fingerprintLabel =  document.createElement('label')
-    this.fingerprint =  document.createElement('input')
-  }
+    var picBtn = document.getElementById('meatfree-picture');
+    var picDrop = document.getElementById('meatfree-drop');
+    $(picBtn).hide();
 
-  MeatFree.prototype.buildModal = function() {
-    this.container = document.createElement('div')
-    this.modal = document.createElement('div')
-    this.submit =  document.createElement('a')
-    this.picBtn = document.createElement('input')
-    this.picDrop = document.createElement('div')
-    this.closeBtn =  document.createElement('a')
-    this.message = document.getElementById('composer-message')
-  }
-
-  MeatFree.prototype.addMenuItems = function() {
-    var self = this
-    var menu = document.getElementById('menu-list')
-
-    var menuItem = document.createElement('li')
+    //Add menu items
+    var menu = document.getElementById('menu-list');
+    var menuItem = document.createElement('li');
+    menuItem.innerHTML = '<a href="#">Choose Photo</a>';
     menuItem.addEventListener('click', function (e) {
-      $(self.container).fadeToggle()
+      $(container).fadeToggle();
+    });
+    menu.appendChild(menuItem);
+
+    var clickDelegate = function(e) {
+      switch (e.target.id) {
+        case 'meatfree-close':
+          e.preventDefault();
+          $(container).fadeOut();
+          break;
+
+        case 'meatfree-submit':
+          e.preventDefault();
+          var submission = $('#composer-form input').toArray()
+          .reduce(function createSub(data, input) {
+            return (data[input.name] = input.value, data);
+          }, postBody);
+
+          $.post('/c/' + postBody.channel + '/chat', submission)
+          .error(function (data) {
+            alert(data.responseJSON.error);
+          })
+          .success(function() {
+            $(this).hide()
+          });
+      }
+    };
+
+
+    // Create stylez.
+    var css = '#meatfree-container {' +
+        'position : fixed;' +
+        'width: 225px;' +
+        'top: ' + document.height / 2 + 'px;' +
+        'background-color: rgba(0, 0, 0, 0.48);' +
+        'color : #fff;' +
+      '}' +
+      '#meatfree-modal  {' +
+        'margin: 20px;' +
+      '}' +
+      '#meatfree-help  {' +
+        'margin: 23px;' +
+        'margin-top: 30px;' +
+      '}' +
+      '#meatfree-container a {' +
+        'padding: 9px;' +
+        'cursor: pointer;' +
+        'color: #287e8d;' +
+        'line-height: 38px;' +
+        'margin: 13px;' +
+        'background-color: #31dfff;' +
+      '}' +
+      '#meatfree-container a:hover {' +
+        'background-color: #fff;' +
+        'color: #111;' +
+      '}' +
+      '#meatfree-drop {' +
+        'height: 80px;' +
+        'border: 5px white dashed;' +
+        'margin: 16px;' +
+      '}';
+
+    var stylez = document.createElement('style');
+    stylez.innerText = css;
+    document.head.appendChild(stylez);
+
+    var resize = function() {
+      container.style.left = Math.floor(window.innerWidth / 2) - Math.floor(container.offsetWidth / 2) + 'px';
+      container.style.top = Math.floor(window.innerHeight / 2) - Math.floor(container.offsetHeight / 2) + 'px';
+    }
+    resize();
+
+    // Add events.
+    message.addEventListener('blur', function messageChange(e) {
+      postBody.message = e.target.value;
     })
-    menuItem.innerHTML = '<a href="#">Choose Photo</a>'
-    menu.appendChild(menuItem)
 
-    var clearBtn = document.createElement('li')
-    clearBtn.addEventListener('click', function (e) {
-      window.localStorage.removeItem('meatfree-userid')
-      window.localStorage.removeItem('meatfree-fingerprint')
-      self.fingerprint.value = ''
-      self.userid.value = ''
-      self.postBody.fingerprint  = ''
-      self.postBody.userid = ''
-    })
-    clearBtn.innerHTML = '<a href="#">Clear Fingerprint</a>'
-    menu.appendChild(clearBtn)
-  }
+    container.addEventListener('click', clickDelegate);
 
-  MeatFree.prototype.render = function() {
-    this.modal.appendChild(this.picDrop)
-    this.modal.appendChild(this.picBtn)
-    this.modal.appendChild(this.closeBtn)
-    this.modal.appendChild(this.submit)
-    this.modal.appendChild(this.meatMenu)
-
-    this.credsModal.appendChild(this.useridLabel)
-    this.credsModal.appendChild(this.userid)
-    this.credsModal.appendChild(this.fingerprintLabel)
-    this.credsModal.appendChild(this.fingerprint)
-
-    this.container.appendChild(this.modal)
-    this.container.appendChild(this.credsModal)
-
-    $(this.container).hide()
-    document.body.appendChild(this.container)
-  }
-
-  MeatFree.prototype.addEvents = function() {
-    var self = this
-
-    this.reader.onload = function(e) {
-      self.postBody.picture = self.reader.result
+    reader.onload = function(e) {
+      postBody.picture = reader.result;
     }
 
     var fileHandler = function(e) {
-      e.stopPropagation()
-      e.preventDefault()
+      e.stopPropagation();
+      e.preventDefault();
       var files = e.target.files || e.dataTransfer.files;
-      self.reader.readAsDataURL(files[0])
-      self.picDrop.style.backgroundColor = 'rgba(143, 253, 152, 0.458824)'
+      reader.readAsDataURL(files[0]);
+      picDrop.style.backgroundColor = 'rgba(143, 253, 152, 0.458824)';
     }
 
     var fileDragHover = function(e) {
-      e.stopPropagation()
-      e.preventDefault()
+      e.stopPropagation();
+      e.preventDefault();
       if (e.type == 'dragover') {
-        this.style.backgroundColor = 'rgba(49, 223, 255, 0.46)'
+        this.style.backgroundColor = 'rgba(49, 223, 255, 0.46)';
       }
       if (e.type == 'dragleave') {
-        this.style.backgroundColor = 'transparent'
+        this.style.backgroundColor = 'transparent';
       }
     }
 
-    this.picBtn.addEventListener('change', fileHandler)
-    this.picDrop.addEventListener('drop', fileHandler)
-    this.picDrop.addEventListener('dragover', fileDragHover)
-    this.picDrop.addEventListener('dragleave', fileDragHover)
-
-    this.container.addEventListener('keydown', function(e) {
-      e.stopPropagation()
-    })
-
-    this.message.addEventListener('blur', function messageChange(e) {
-      self.postBody.message = e.target.value
-    })
-
-    this.userid.addEventListener('blur', function useridChange(e) {
-      self.postBody.userid = e.target.value
-      window.localStorage.setItem('meatfree-userid', self.postBody.userid)
-    })
-
-    this.fingerprint.addEventListener('blur', function fingerprintChange(e) {
-      self.postBody.fingerprint = e.target.value
-      window.localStorage.setItem('meatfree-fingerprint', self.postBody.fingerprint)
-    })
-
-    this.closeBtn.addEventListener('click', function(e){
-      e.preventDefault()
-      $(self.container).fadeOut();
-    })
-
-    this.meatMenu.addEventListener('click', function(e) {
-      e.preventDefault()
-      $(self.credsModal).slideToggle()
-    })
-
-    this.submit.addEventListener('mouseover', function(e){
-      this.style.color = '#31dfff'
-    })
-    this.submit.addEventListener('mouseout', function(e){
-      this.style.color = '#fff'
-    })
-    this.closeBtn.addEventListener('mouseover', function(e){
-      this.style.color = '#31dfff'
-    })
-    this.closeBtn.addEventListener('mouseout', function(e){
-      this.style.color = '#fff'
-    })
-    this.meatMenu.addEventListener('mouseover', function(e){
-      this.style.color = '#31dfff'
-    })
-    this.meatMenu.addEventListener('mouseout', function(e){
-      this.style.color = '#fff'
-    })
-    this.submit.addEventListener('click', function(e){
-      e.preventDefault()
-      var submission = $('#composer-form input').toArray()
-      .reduce(function createSub(data, input) {
-        return (data[input.name] = input.value, data);
-      }, self.postBody)
-
-      $.post('/c/' + self.postBody.channel + '/chat', submission)
-      .error(function (data) {
-        alert(data.responseJSON.error);
-      })
-      .success(function() {
-        $(self.container).hide()
-      })
-    })
-
-
-  }
-
-  MeatFree.prototype.addStyles = function() {
-    var userid = ''
-    var fingerprint = ''
-
-    if (typeof window.localStorage.getItem('meatfree-userid') === 'string') {
-      userid = window.localStorage.getItem('meatfree-userid')
-    }
-    if (typeof window.localStorage.getItem('meatfree-fingerprint') === 'string') {
-      fingerprint = window.localStorage.getItem('meatfree-fingerprint')
-    }
-
-    if (userid !== '' && fingerprint !== '') {
-      $(this.credsModal).hide()
-    }
-
-    this.container.style.position = 'fixed';
-    this.container.id = 'meatfree-container'
-    this.container.style.left = (window.innerWidth / 2) - ( this.container.offsetWidth / 2  ) + 'px'
-    this.container.style.width = '225px'
-    this.container.style.top = '100px'
-    this.container.style.backgroundColor = 'rgba(0, 0, 0, 0.48)'
-    this.container.style.color = '#fff'
-
-    this.credsModal.id = 'meatfree-creds'
-    this.credsModal.style.padding = '20px'
-    this.credsModal.style.backgroundColor = 'rgba(106, 107, 104, 0.2)'
-
-    this.modal.style.padding = '20px'
-
-    this.submit.innerText = 'Submit'
-    this.submit.style.cursor = 'pointer'
-    this.submit.style.padding = '10px'
-
-    this.picDrop.id = 'pic-drop'
-    this.picDrop.style.height = '80px'
-    this.picDrop.style.border = '5px white dashed'
-    this.picDrop.style.margin = '10px'
-
-    this.picBtn.type = 'file'
-    this.picBtn.id = 'picture'
-    $(this.picBtn).hide()
-
-    this.useridLabel.innerText = 'User ID:'
-    this.useridLabel.htmlFor = 'meatfree-userid'
-    this.userid.type = 'text'
-    this.userid.id = 'meatfree-userid'
-    this.userid.value = userid
-    this.postBody.userid = userid
-    this.userid.size = 32
-    this.userid.style.backgroundColor = 'rgba(0,0,0,0.1)'
-    this.userid.style.padding = '10px'
-    this.userid.style.margin = '10px'
-    this.userid.style.width = '75%'
-    this.userid.style.border = 'none'
-    this.userid.style.color = '#fff'
-
-    this.fingerprintLabel.innerText = 'Fingerprint:'
-    this.fingerprintLabel.htmlFor = 'meatfree-fingerprint'
-    this.fingerprint.type = 'text'
-    this.fingerprint.id = 'meatfree-fingerprint'
-    this.fingerprint.value = fingerprint
-    this.postBody.fingerprint = fingerprint
-    this.fingerprint.style.backgroundColor = 'rgba(0,0,0,0.1)'
-    this.fingerprint.style.padding = '10px'
-    this.fingerprint.style.margin = '10px'
-    this.fingerprint.style.width = '75%'
-    this.fingerprint.style.border = 'none'
-    this.fingerprint.style.color = '#fff'
-
-    this.closeBtn.innerText = 'Close'
-    this.closeBtn.style.padding = '10px'
-    this.closeBtn.style.cursor = 'pointer'
-
-    this.meatMenu.innerText = '≡'
-    this.meatMenu.style.fontSize = '33px'
-    this.meatMenu.style.padding = '10px'
-    this.meatMenu.style.cursor = 'pointer'
-  }
-
-  var meatfree = new MeatFree()
-  
+    window.addEventListener('resize', resize);
+    picBtn.addEventListener('change', fileHandler);
+    picDrop.addEventListener('drop', fileHandler);
+    picDrop.addEventListener('dragover', fileDragHover);
+    picDrop.addEventListener('dragleave', fileDragHover);
   });
-  
-})(jQuery, require("fingerprint"), require("md5"))
+})(jQuery, require('fingerprint'), require('md5'));

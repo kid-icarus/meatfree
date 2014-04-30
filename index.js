@@ -1,6 +1,6 @@
 (function($, Fingerprint, md5) {
 
-  $.get("/ip?t=" new Date().getTime(), function(data) {
+  $.get("/ip?t=" + new Date().getTime(), function(data) {
   
   var fingerprint = new Fingerprint({canvas: true}).get(),
       ip = data.ip,

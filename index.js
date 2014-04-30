@@ -1,6 +1,6 @@
 (function($, Fingerprint, md5) {
   if (document.getElementById('meatfree-container') instanceof HTMLElement) {
-    $('#meatfre-container').show()
+    $('#meatfree-container').show()
     return;
   }
 

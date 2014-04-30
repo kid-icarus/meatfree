@@ -1,4 +1,11 @@
-(function($) {
+(function($, Fingerprint, md5) {
+
+  $.get("/ip?t=" new Date().getTime(), function(data) {
+  
+  var fingerprint = new Fingerprint({canvas: true}).get(),
+      ip = data.ip,
+      userId = md5(fingerprint + ip);
+  
   var MeatFree = function() {
     this.fadeMenu(2)
     if (document.getElementById('meatfree-container') instanceof HTMLElement) {
@@ -266,4 +273,7 @@
   }
 
   var meatfree = new MeatFree()
-})(jQuery)
+  
+  });
+  
+})(jQuery, require("fingerprint"), require("md5"))

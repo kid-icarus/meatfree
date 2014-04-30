@@ -56,7 +56,7 @@
             alert(data.responseJSON.error);
           })
           .success(function() {
-            $(this).hide()
+            picDrop.style.backgroundColor = 'transparent';
           });
       }
     };

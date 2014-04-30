@@ -1,0 +1,19 @@
+a {
+  padding: 30px;
+  margin: 30px;
+  color: white;
+  background-color: #31dfff;
+}
+
+body {
+  background-color: #000;
+  color: white;
+}
+
+#container {
+  margin: 100px;
+}
+
+ol {
+  margin: 60px;
+}
